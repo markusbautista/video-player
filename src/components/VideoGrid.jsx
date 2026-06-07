@@ -1,12 +1,50 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import "./VideoGrid.css";
 
-const VideoGrid = ({ videoData }) => {
+const VideoGrid = ({ videoData, isPlaying, isMuted, volume }) => {
   const [gridLayout, setGridLayout] = useState({ columns: 1, rows: 1 });
   const [videoDimensions, setVideoDimensions] = useState({
     width: 0,
     height: 0,
   });
+  
+  const videoRefs = useRef([]);
+
+  useEffect(() => {
+    // Apply play/pause
+    videoRefs.current.forEach((video) => {
+      if (video) {
+        if (isPlaying) {
+          video.play().catch(e => console.log("Play failed:", e));
+        } else {
+          video.pause();
+        }
+      }
+    });
+  }, [isPlaying]);
+
+  useEffect(() => {
+    // Apply mute state
+    videoRefs.current.forEach((video) => {
+      if (video) {
+        video.muted = isMuted;
+      }
+    });
+  }, [isMuted]);
+
+  useEffect(() => {
+    // Apply volume
+    videoRefs.current.forEach((video) => {
+      if (video) {
+        video.volume = volume;
+      }
+    });
+  }, [volume]);
+
+  useEffect(() => {
+    // Keep refs array size in sync with videoData
+    videoRefs.current = videoRefs.current.slice(0, videoData.length);
+  }, [videoData]);
 
   useEffect(() => {
     const updateGrid = () => {
@@ -67,10 +105,15 @@ const VideoGrid = ({ videoData }) => {
     if (videoItem.type === "url") {
       // Add autoplay and loop parameters to the URL
       let videoUrl = videoItem.source;
+      
+      // Update iframe url based on states if possible. 
+      // Note: Changing iframe src reloads the video, which disrupts playback.
+      // We only set it on initial render.
+      const paramStr = `autoplay=${isPlaying ? 1 : 0}&loop=1&mute=${isMuted ? 1 : 0}`;
       if (videoUrl.includes("?")) {
-        videoUrl += "&autoplay=1&loop=1&mute=1";
+        videoUrl += `&${paramStr}`;
       } else {
-        videoUrl += "?autoplay=1&loop=1&mute=1";
+        videoUrl += `?${paramStr}`;
       }
 
       return (
@@ -86,11 +129,12 @@ const VideoGrid = ({ videoData }) => {
       return (
         <video
           key={index}
+          ref={(el) => (videoRefs.current[index] = el)}
           src={videoItem.source}
-          controls
-          autoPlay
+          controls={false}
+          autoPlay={isPlaying}
           loop
-          muted
+          muted={isMuted}
           style={{
             width: "100%",
             height: "100%",

@@ -7,6 +7,9 @@ import "./App.css";
 function App() {
   const [videoData, setVideoData] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [isMuted, setIsMuted] = useState(true);
+  const [volume, setVolume] = useState(1);
 
   const showModal = useCallback(() => {
     setIsModalOpen(true);
@@ -24,10 +27,27 @@ function App() {
     [hideModal]
   );
 
+  const togglePlay = () => setIsPlaying(!isPlaying);
+  const toggleMute = () => setIsMuted(!isMuted);
+  const handleVolumeChange = (e) => setVolume(parseFloat(e.target.value));
+
   return (
     <div className="app">
-      <VideoGrid videoData={videoData} />
-      <FAB onClick={showModal} />
+      <VideoGrid 
+        videoData={videoData} 
+        isPlaying={isPlaying} 
+        isMuted={isMuted} 
+        volume={volume} 
+      />
+      <FAB 
+        onClick={showModal} 
+        isPlaying={isPlaying}
+        isMuted={isMuted}
+        volume={volume}
+        onTogglePlay={togglePlay}
+        onToggleMute={toggleMute}
+        onVolumeChange={handleVolumeChange}
+      />
       <VideoModal
         isOpen={isModalOpen}
         onClose={hideModal}
